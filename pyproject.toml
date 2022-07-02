@@ -1,0 +1,10 @@
+[project]
+name = "charybdis"
+version = "1"
+dependencies = [
+    "requests",
+    "aiohttp",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
