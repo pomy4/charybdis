@@ -8,10 +8,16 @@ import httpx
 
 
 class Api:
-    base_url = "https://api.smitegame.com/smiteapi.svc"
+    smite_pc_url = "https://api.smitegame.com/smiteapi.svc"
+    smite_xbox_url = "https://api.xbox.smitegame.com/smiteapi.svc"
+    smite_ps4_url = "https://api.ps4.smitegame.com/smiteapi.svc"
+    paladins_pc_url = "https://api.paladins.com/paladinsapi.svc"
+    paladins_xbox_url = "https://api.xbox.paladins.com/paladinsapi.svc"
+    paladins_ps4_url = "https://api.ps4.paladins.com/paladinsapi.svc"
 
     def __init__(
         self,
+        base_url: str = smite_pc_url,
         dev_id: str = os.getenv("SMITE_DEV_ID"),
         auth_key: str = os.getenv("SMITE_AUTH_KEY"),
         delay: datetime.timedelta | None = datetime.timedelta(milliseconds=100),
@@ -19,6 +25,7 @@ class Api:
         client: httpx.Client | None = None,
         aclient: httpx.AsyncClient | None = None,
     ):
+        self.base_url = base_url
         self.dev_id = dev_id
         self.auth_key = auth_key
         self.delay = delay
