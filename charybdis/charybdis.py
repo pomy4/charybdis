@@ -14,6 +14,7 @@ class Api:
     paladins_pc_url = "https://api.paladins.com/paladinsapi.svc"
     paladins_xbox_url = "https://api.xbox.paladins.com/paladinsapi.svc"
     paladins_ps4_url = "https://api.ps4.paladins.com/paladinsapi.svc"
+    default_timeout = httpx.Timeout(5.0, read=10.0)
 
     def __init__(
         self,
@@ -44,7 +45,7 @@ class Api:
                 "Cannot use a context manager and the"
                 " client parameter at the same time."
             )
-        self.client = httpx.Client(verify=self.verify)
+        self.client = httpx.Client(verify=self.verify, timeout=self.default_timeout)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -56,7 +57,9 @@ class Api:
                 "Cannot use an async context manager and the"
                 " aclient parameter at the same time."
             )
-        self.aclient = httpx.AsyncClient(verify=self.verify)
+        self.aclient = httpx.AsyncClient(
+            verify=self.verify, timeout=self.default_timeout
+        )
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -71,7 +74,7 @@ class Api:
     def _fetch(self, url: str) -> httpx.Response:
         url = f"{self.base_url}/{url}"
         if self.client is None:
-            resp = httpx.get(url, verify=self.verify)
+            resp = httpx.get(url, verify=self.verify, timeout=self.default_timeout)
         else:
             resp = self.client.get(url)
         resp.raise_for_status()
