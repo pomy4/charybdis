@@ -8,7 +8,7 @@ Other Python wrappers:
 * https://github.com/DevilXD/aRez
 
 ## Installation
-`pip install git+https://github.com/NAZADOTH/charybdis`
+`pip install charybdis`
 
 ## Usage
 ### Sync
