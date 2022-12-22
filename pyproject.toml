@@ -13,3 +13,12 @@ license = { file = "LICENSE" }
 [build-system]
 requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+disallow_untyped_defs = true
+
+[tool.taskipy.tasks]
+lint = "black charybdis && isort charybdis && flake8 charybdis && mypy charybdis"

@@ -1,0 +1,8 @@
+pip-tools
+flit
+taskipy
+
+black
+isort
+flake8
+mypy

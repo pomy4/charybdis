@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import datetime
 import hashlib
 import os
 import time
+import types
+import typing
 
 import httpx
 
@@ -19,13 +23,15 @@ class Api:
     def __init__(
         self,
         base_url: str = smite_pc_url,
-        dev_id: str = os.getenv("SMITE_DEV_ID"),
-        auth_key: str = os.getenv("SMITE_AUTH_KEY"),
+        dev_id: str | None = os.getenv("SMITE_DEV_ID"),
+        auth_key: str | None = os.getenv("SMITE_AUTH_KEY"),
         delay: datetime.timedelta | None = datetime.timedelta(milliseconds=100),
         verify: bool = True,
         client: httpx.Client | None = None,
         aclient: httpx.AsyncClient | None = None,
     ):
+        if dev_id is None or auth_key is None:
+            raise ValueError("dev_id and/or auth_key is None.")
         self.base_url = base_url
         self.dev_id = dev_id
         self.auth_key = auth_key
@@ -36,10 +42,8 @@ class Api:
         self._session_id: str | None = None
         self._last: datetime.datetime | None = None
         self._alock = asyncio.Lock()
-        if self.dev_id is None or self.auth_key is None:
-            raise ValueError("DEV_ID and/or AUTH_KEY is not set.")
 
-    def __enter__(self):
+    def __enter__(self) -> Api:
         if self.client is not None:
             raise ValueError(
                 "Cannot use a context manager and the"
@@ -48,10 +52,16 @@ class Api:
         self.client = httpx.Client(verify=self.verify, timeout=self.default_timeout)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        _exc_type: typing.Type[BaseException] | None,
+        _exc: BaseException | None,
+        _tb: types.TracebackType | None,
+    ) -> None:
+        assert self.client is not None
         self.client.close()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Api:
         if self.aclient is not None:
             raise ValueError(
                 "Cannot use an async context manager and the"
@@ -62,7 +72,13 @@ class Api:
         )
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        _exc_type: typing.Type[BaseException] | None,
+        _exc: BaseException | None,
+        _tb: types.TracebackType | None,
+    ) -> None:
+        assert self.aclient is not None
         await self.aclient.aclose()
 
     def ping(self) -> str:
@@ -92,12 +108,36 @@ class Api:
         resp.raise_for_status()
         return resp
 
-    def call_method(self, *args) -> dict | list:
+    def call_method_dict(self, *args: str) -> dict[str, typing.Any]:
+        return self._confirm_is_dict(self.call_method(*args))
+
+    def call_method_list(self, *args: str) -> list:
+        return self._confirm_is_list(self.call_method(*args))
+
+    async def acall_method_dict(self, *args: str) -> dict[str, typing.Any]:
+        return self._confirm_is_dict(await self.acall_method(*args))
+
+    async def acall_method_list(self, *args: str) -> list:
+        return self._confirm_is_list(await self.acall_method(*args))
+
+    @staticmethod
+    def _confirm_is_dict(x: typing.Any) -> dict:
+        if not isinstance(x, dict):
+            raise RuntimeError(f"Expected dict, received type: {type(x)}, val: {x}")
+        return x
+
+    @staticmethod
+    def _confirm_is_list(x: typing.Any) -> list:
+        if not isinstance(x, list):
+            raise RuntimeError(f"Expected list, received type: {type(x)}, val: {x}")
+        return x
+
+    def call_method(self, *args: str) -> typing.Any:
         if self._session_id is None:
             self.create_session()
         return self._call_method(*args)
 
-    async def acall_method(self, *args) -> dict | list:
+    async def acall_method(self, *args: str) -> typing.Any:
         async with self._alock:
             if self._session_id is None:
                 await self.acreate_session()
@@ -109,14 +149,14 @@ class Api:
     async def acreate_session(self) -> None:
         self._session_id = (await self._acall_method("createsession"))["session_id"]
 
-    def _call_method(self, method_name: str, *args) -> dict | list:
+    def _call_method(self, method_name: str, *args: str) -> typing.Any:
         now = datetime.datetime.now(datetime.timezone.utc)
         if (to_sleep := self._update_last(now)) is not None:
             time.sleep(to_sleep)
         url = self._create_url(now, method_name, *args)
         return self._fetch(url).json()
 
-    async def _acall_method(self, method_name: str, *args) -> dict | list:
+    async def _acall_method(self, method_name: str, *args: str) -> typing.Any:
         now = datetime.datetime.now(datetime.timezone.utc)
         if (to_sleep := self._update_last(now)) is not None:
             await asyncio.sleep(to_sleep)
@@ -124,15 +164,18 @@ class Api:
         return (await self._afetch(url)).json()
 
     def _update_last(self, now: datetime.datetime) -> float | None:
-        if self.delay is not None:
-            if self._last is None or self._last + self.delay <= now:
-                self._last = now
-            else:
-                self._last += self.delay
-                to_sleep = self._last - now
-                return to_sleep.total_seconds()
+        if self.delay is None:
+            return None
 
-    def _create_url(self, now: datetime.datetime, method_name: str, *args) -> str:
+        if self._last is None or self._last + self.delay <= now:
+            self._last = now
+            return None
+
+        self._last += self.delay
+        to_sleep = self._last - now
+        return to_sleep.total_seconds()
+
+    def _create_url(self, now: datetime.datetime, method_name: str, *args: str) -> str:
         timestamp = now.strftime("%Y%m%d%H%M%S")
         signature = self._create_signature(method_name, timestamp)
         url = f"{method_name}json/{self.dev_id}/{signature}"
