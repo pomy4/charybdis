@@ -41,7 +41,6 @@ class Api:
         self.aclient = aclient
         self._session_id: str | None = None
         self._last: datetime.datetime | None = None
-        self._alock = asyncio.Lock()
 
     def __enter__(self) -> Api:
         if self.client is not None:
@@ -138,16 +137,12 @@ class Api:
         return self._call_method(*args)
 
     async def acall_method(self, *args: str) -> typing.Any:
-        async with self._alock:
-            if self._session_id is None:
-                await self.acreate_session()
+        if self._session_id is None:
+            self.create_session()
         return await self._acall_method(*args)
 
     def create_session(self) -> None:
         self._session_id = self._call_method("createsession")["session_id"]
-
-    async def acreate_session(self) -> None:
-        self._session_id = (await self._acall_method("createsession"))["session_id"]
 
     def _call_method(self, method_name: str, *args: str) -> typing.Any:
         now = datetime.datetime.now(datetime.timezone.utc)
