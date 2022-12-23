@@ -179,7 +179,8 @@ class Api:
         timestamp = now.strftime("%Y%m%d%H%M%S")
         signature = self._create_signature(method_name, timestamp)
         url = f"{method_name}json/{self.dev_id}/{signature}"
-        if self._session_id is not None:
+        if method_name != "createsession":
+            assert self._session_id is not None
             url += f"/{self._session_id}"
         url += f"/{timestamp}"
         for arg in args:
