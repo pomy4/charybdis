@@ -12,6 +12,8 @@ import httpx
 
 
 class Api:
+    """Hi-Rez API wrapper."""
+
     SMITE_PC_URL = "https://api.smitegame.com/smiteapi.svc"
     SMITE_XBOX_URL = "https://api.xbox.smitegame.com/smiteapi.svc"
     SMITE_PS4_URL = "https://api.ps4.smitegame.com/smiteapi.svc"
@@ -81,9 +83,14 @@ class Api:
         await self.aclient.aclose()
 
     def ping(self) -> str:
+        """
+        Calls the ping method, which seems to return a string with
+        the current Smite build and patch version, and the current server date.
+        """
         return self._fetch("pingjson").text
 
     async def aping(self) -> str:
+        """Same as ping but asynchronous."""
         return (await self._afetch("pingjson")).text
 
     def _fetch(self, url: str) -> httpx.Response:
@@ -108,17 +115,21 @@ class Api:
         return resp
 
     def call_method_dict(self, method_name: str, *args: str) -> dict[str, typing.Any]:
+        """Wrapper around call_method which checks that the result is a dict."""
         return self._confirm_is_dict(self.call_method(method_name, *args))
 
     def call_method_list(self, method_name: str, *args: str) -> list:
+        """Wrapper around call_method which checks that the result is a list."""
         return self._confirm_is_list(self.call_method(method_name, *args))
 
     async def acall_method_dict(
         self, method_name: str, *args: str
     ) -> dict[str, typing.Any]:
+        """Same as call_method_dict but asynchronous."""
         return self._confirm_is_dict(await self.acall_method(method_name, *args))
 
     async def acall_method_list(self, method_name: str, *args: str) -> list:
+        """Same as call_method_list but asynchronous."""
         return self._confirm_is_list(await self.acall_method(method_name, *args))
 
     @staticmethod
@@ -134,16 +145,29 @@ class Api:
         return x
 
     def call_method(self, method_name: str, *args: str) -> typing.Any:
+        """
+        Calls Hi-Rez API method 'method_name' with variadic arguments 'args'.
+        See the Hi-Rez API documentation for info about available methods.
+        Also calls create_session if it hasn't been called yet.
+        """
         if self._session_id is None:
             self.create_session()
         return self._call_method(method_name, *args)
 
     async def acall_method(self, method_name: str, *args: str) -> typing.Any:
+        """Same as call_method but asynchronous."""
         if self._session_id is None:
             self.create_session()
         return await self._acall_method(method_name, *args)
 
     def create_session(self) -> None:
+        """
+        Creates a session with the Hi-Rez API,
+        which is required for calling any other Hi-Rez API method (except ping).
+        call_method automatically creates a session if it hasn't been done yet.
+        Session only lasts around 15 minutes, after which it has to be created again.
+        Currently, this recreation has to be done manually (TODO).
+        """
         self._session_id = self._call_method("createsession")["session_id"]
 
     def _call_method(self, method_name: str, *args: str) -> typing.Any:
