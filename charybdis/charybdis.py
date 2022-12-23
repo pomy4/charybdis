@@ -107,17 +107,19 @@ class Api:
         resp.raise_for_status()
         return resp
 
-    def call_method_dict(self, *args: str) -> dict[str, typing.Any]:
-        return self._confirm_is_dict(self.call_method(*args))
+    def call_method_dict(self, method_name: str, *args: str) -> dict[str, typing.Any]:
+        return self._confirm_is_dict(self.call_method(method_name, *args))
 
-    def call_method_list(self, *args: str) -> list:
-        return self._confirm_is_list(self.call_method(*args))
+    def call_method_list(self, method_name: str, *args: str) -> list:
+        return self._confirm_is_list(self.call_method(method_name, *args))
 
-    async def acall_method_dict(self, *args: str) -> dict[str, typing.Any]:
-        return self._confirm_is_dict(await self.acall_method(*args))
+    async def acall_method_dict(
+        self, method_name: str, *args: str
+    ) -> dict[str, typing.Any]:
+        return self._confirm_is_dict(await self.acall_method(method_name, *args))
 
-    async def acall_method_list(self, *args: str) -> list:
-        return self._confirm_is_list(await self.acall_method(*args))
+    async def acall_method_list(self, method_name: str, *args: str) -> list:
+        return self._confirm_is_list(await self.acall_method(method_name, *args))
 
     @staticmethod
     def _confirm_is_dict(x: typing.Any) -> dict:
@@ -131,15 +133,15 @@ class Api:
             raise RuntimeError(f"Expected list, received type: {type(x)}, val: {x}")
         return x
 
-    def call_method(self, *args: str) -> typing.Any:
+    def call_method(self, method_name: str, *args: str) -> typing.Any:
         if self._session_id is None:
             self.create_session()
-        return self._call_method(*args)
+        return self._call_method(method_name, *args)
 
-    async def acall_method(self, *args: str) -> typing.Any:
+    async def acall_method(self, method_name: str, *args: str) -> typing.Any:
         if self._session_id is None:
             self.create_session()
-        return await self._acall_method(*args)
+        return await self._acall_method(method_name, *args)
 
     def create_session(self) -> None:
         self._session_id = self._call_method("createsession")["session_id"]
