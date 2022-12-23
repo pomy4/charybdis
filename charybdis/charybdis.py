@@ -12,17 +12,17 @@ import httpx
 
 
 class Api:
-    smite_pc_url = "https://api.smitegame.com/smiteapi.svc"
-    smite_xbox_url = "https://api.xbox.smitegame.com/smiteapi.svc"
-    smite_ps4_url = "https://api.ps4.smitegame.com/smiteapi.svc"
-    paladins_pc_url = "https://api.paladins.com/paladinsapi.svc"
-    paladins_xbox_url = "https://api.xbox.paladins.com/paladinsapi.svc"
-    paladins_ps4_url = "https://api.ps4.paladins.com/paladinsapi.svc"
-    default_timeout = httpx.Timeout(5.0, read=10.0)
+    SMITE_PC_URL = "https://api.smitegame.com/smiteapi.svc"
+    SMITE_XBOX_URL = "https://api.xbox.smitegame.com/smiteapi.svc"
+    SMITE_PS4_URL = "https://api.ps4.smitegame.com/smiteapi.svc"
+    PALADINS_PC_URl = "https://api.paladins.com/paladinsapi.svc"
+    PALADINS_XBOX_URL = "https://api.xbox.paladins.com/paladinsapi.svc"
+    PALADINS_PS4_URL = "https://api.ps4.paladins.com/paladinsapi.svc"
+    DEFAULT_TIMEOUT = httpx.Timeout(5.0, read=10.0)
 
     def __init__(
         self,
-        base_url: str = smite_pc_url,
+        base_url: str = SMITE_PC_URL,
         dev_id: str | None = os.getenv("SMITE_DEV_ID"),
         auth_key: str | None = os.getenv("SMITE_AUTH_KEY"),
         delay: datetime.timedelta | None = datetime.timedelta(milliseconds=100),
@@ -48,7 +48,7 @@ class Api:
                 "Cannot use a context manager and the"
                 " client parameter at the same time."
             )
-        self.client = httpx.Client(verify=self.verify, timeout=self.default_timeout)
+        self.client = httpx.Client(verify=self.verify, timeout=self.DEFAULT_TIMEOUT)
         return self
 
     def __exit__(
@@ -67,7 +67,7 @@ class Api:
                 " aclient parameter at the same time."
             )
         self.aclient = httpx.AsyncClient(
-            verify=self.verify, timeout=self.default_timeout
+            verify=self.verify, timeout=self.DEFAULT_TIMEOUT
         )
         return self
 
@@ -89,7 +89,7 @@ class Api:
     def _fetch(self, url: str) -> httpx.Response:
         url = f"{self.base_url}/{url}"
         if self.client is None:
-            resp = httpx.get(url, verify=self.verify, timeout=self.default_timeout)
+            resp = httpx.get(url, verify=self.verify, timeout=self.DEFAULT_TIMEOUT)
         else:
             resp = self.client.get(url)
         resp.raise_for_status()

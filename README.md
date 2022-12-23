@@ -20,7 +20,7 @@ import charybdis
 
 api = charybdis.Api(
     # These are also the default values.
-    base_url=charybdis.Api.smite_pc_url,
+    base_url=charybdis.Api.SMITE_PC_URL,
     dev_id=os.getenv("SMITE_DEV_ID"),
     auth_key=os.getenv("SMITE_AUTH_KEY")
 )
